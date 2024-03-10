@@ -24,13 +24,12 @@ jobs:
 
       - name: Configure Terraform environment variables
         run: |
-          export TF_VAR_access_key="${{ secrets.ACCESS_KEY }}"
-          export TF_VAR_secret_key="${{ secrets.SECRET_KEY }}"
-          export TF_VAR_ami_key_pair_name="${{ secrets.AMI_KEY_PAIR_NAME }}"
-          export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
-          export TF_VAR_list_subnet="${{ secrets.LIST_SUBNET }}"
-          export TF_VAR_subnet_id="${{ secrets.SUBNET_ID }}"
-          export TF_VAR_security_group_ids="${{ secrets.SECURITY_GROUP_IDS }}"
+          export TF_VAR_ACCESS_KEY="${{ secrets.ACCESS_KEY }}"
+          export TF_VAR_SECRET_KEY="${{ secrets.SECRET_KEY }}"
+          export TF_VAR_AMI_KEY_PAIR_NAME="${{ secrets.AMI_KEY_PAIR_NAME }}"
+          export TF_VAR_VPC_ID="${{ secrets.VPC_ID }}"
+          export TF_VAR_LIST_SUBNET="${{ secrets.LIST_SUBNET }}"
+          export TF_VAR_SUBNET_ID="${{ secrets.SUBNET_ID }}"
 
       - name: Terraform Format
         id: fmt
