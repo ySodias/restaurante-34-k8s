@@ -22,15 +22,6 @@ jobs:
           # terraform_version: 1.4.2
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-      - name: Configure Terraform environment variables
-        run: |
-          export TF_VAR_access_key="${{ secrets.ACCESS_KEY }}"
-          export TF_VAR_secret_key="${{ secrets.SECRET_KEY }}"
-          export TF_VAR_ami_key_pair_name="${{ secrets.AMI_KEY_PAIR_NAME }}"
-          export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
-          export TF_VAR_list_subnet="${{ secrets.LIST_SUBNET }}"
-          export TF_VAR_subnet_id="${{ secrets.SUBNET_ID }}"
-
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
