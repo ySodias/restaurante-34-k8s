@@ -87,24 +87,10 @@ jobs:
             })
 
       - name: Terraform Plan Status
-        env:
-          TF_VAR_access_key="${{ secrets.ACCESS_KEY }}"
-          TF_VAR_secret_key="${{ secrets.SECRET_KEY }}"
-          TF_VAR_ami_key_pair_name="${{ secrets.AMI_KEY_PAIR_NAME }}"
-          TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
-          TF_VAR_list_subnet="${{ secrets.LIST_SUBNET }}"
-          TF_VAR_subnet_id="${{ secrets.SUBNET_ID }}"
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
       - name: Terraform Apply
-        env:
-          TF_VAR_access_key="${{ secrets.ACCESS_KEY }}"
-          TF_VAR_secret_key="${{ secrets.SECRET_KEY }}"
-          TF_VAR_ami_key_pair_name="${{ secrets.AMI_KEY_PAIR_NAME }}"
-          TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
-          TF_VAR_list_subnet="${{ secrets.LIST_SUBNET }}"
-          TF_VAR_subnet_id="${{ secrets.SUBNET_ID }}"
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
 
