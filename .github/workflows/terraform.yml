@@ -1,0 +1,125 @@
+name: "Terraform"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          # terraform_version: 1.4.2
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+      
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: Update Pull Request
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: ${{ steps.plan.outputs.stdout }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false
+
+  install_kubernetes:
+    name: Install Kubernetes
+    runs-on: ubuntu-latest
+    if: ${{ success() && needs.terraform_apply.outputs.resources_created == 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: us-east-1 
+      - name: Get EC2 instance ID by name
+        id: get-instance-id
+        run: |
+          instance_id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=kubectl" "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].InstanceId" --output text)
+          echo "::set-output name=instance_id::$instance_id"
+  
+      - name: Get EC2 instance host
+        id: ec2-info
+        run: |
+          instance_host=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=kubectl" "Name=instance-state-name,Values=running"  --query "Reservations[].Instances[].PublicIpAddress" --output text)
+          echo "::set-output name=instance_info::$instance_host"
+          
+      - name: Apply role to EC2 instance
+        run: |
+          instance_id="${{ steps.get-instance-id.outputs.instance_id }}"
+          aws ec2 associate-iam-instance-profile --iam-instance-profile Name=ed-eks-worker-new-profile --instance-id $instance_id
+      
+      - name: Executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@master
+        with:
+          key: ${{ secrets.AWS_PRIVATE_KEY }}
+          host: ${{ steps.ec2-info.outputs.instance_info }}
+          username: "ec2-user"
+          script: |
+            echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
+            curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.29.0/2024-01-04/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+            echo 'export PATH=$HOME/bin:$PATH' >> ~/.bash_profile
+            
+            aws eks update-kubeconfig --region us-east-1 --name restaurant-34
