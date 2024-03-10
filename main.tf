@@ -11,14 +11,6 @@ terraform {
     }
   }
   required_version = ">= 1.1.0"
-
-  cloud {
-    organization = "restaurant-34-tc"
-
-    workspaces {
-      name = "tech-challenge"
-    }
-  }
 }
 
 provider "aws" {
