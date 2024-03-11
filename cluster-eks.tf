@@ -163,7 +163,7 @@ resource "aws_eks_node_group" "node-grp" {
   node_group_name = "node-group"
   node_role_arn   = aws_iam_role.worker.arn
   subnet_ids      = var.list_subnet
-  capacity_type   = "ON_DEMAND"
+  capacity_type   = "SPOT"
   instance_types  = ["t3.large"]
 
   remote_access {
