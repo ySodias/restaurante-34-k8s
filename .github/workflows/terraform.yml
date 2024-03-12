@@ -96,29 +96,34 @@ jobs:
         uses: actions/checkout@v2
         
       - name: Configure AWS credentials
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.SECRET_KEY }}
           aws-region: us-east-1 
       - name: Get EC2 instance ID by name
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: get-instance-id
         run: |
           instance_id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=kubectl" "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].InstanceId" --output text)
           echo "::set-output name=instance_id::$instance_id"
   
       - name: Get EC2 instance host
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         id: ec2-info
         run: |
           instance_host=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=kubectl" "Name=instance-state-name,Values=running"  --query "Reservations[].Instances[].PublicIpAddress" --output text)
           echo "::set-output name=instance_info::$instance_host"
           
       - name: Apply role to EC2 instance
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           instance_id="${{ steps.get-instance-id.outputs.instance_id }}"
           aws ec2 associate-iam-instance-profile --iam-instance-profile Name=ed-eks-worker-new-profile --instance-id $instance_id
       
       - name: Executing remote ssh commands using ssh key
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: appleboy/ssh-action@master
         with:
           key: ${{ secrets.AWS_PRIVATE_KEY }}
