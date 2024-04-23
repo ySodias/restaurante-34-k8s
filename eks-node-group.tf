@@ -11,14 +11,14 @@ resource "aws_eks_node_group" "node" {
   }
 
   remote_access {
-    ec2_ssh_key               = "teste"
-    source_security_group_ids = [var.sgId]
+    ec2_ssh_key               = "teste2"
+    source_security_group_ids = [var.sgId, var.sgIdRemoteAcess]
   }
 
   update_config {
     max_unavailable = 1
   }
 
-  instance_types = ["t3.large", "t3a.large", "m5.large", "m5a.large", "m4.large"]
-  capacity_type  = "SPOT"
+  instance_types = ["t3.medium"]
+  capacity_type  = "ON_DEMAND"
 }
