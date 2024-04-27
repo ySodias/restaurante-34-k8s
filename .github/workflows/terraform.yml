@@ -40,10 +40,15 @@ jobs:
         env:
           TF_VAR_access_key: ${{ secrets.ACCESS_KEY }}
           TF_VAR_secret_key: ${{ secrets.SECRET_KEY }}
-          TF_VAR_ami_key_pair_name: ${{ secrets.AMI_KEY_PAIR_NAME }}
-          TF_VAR_vpc_id: ${{ secrets.VPC_ID }}
-          TF_VAR_list_subnet: ${{ secrets.LIST_SUBNET }}
-          TF_VAR_subnet_id: ${{ secrets.SUBNET_ID }}
+          TF_VAR_nodeName: ${{ secrets.NODENAME }}
+          TF_VAR_token: ${{ secrets.TOKEN }}
+          TF_VAR_labRole: ${{ secrets.LAB_ROLE }}
+          TF_VAR_principalArn: ${{ secrets.PRINCIPALARN }}
+          TF_VAR_subnetA: ${{ secrets.SUBNETA }}
+          TF_VAR_subnetB: ${{ secrets.SUBNETB }}
+          TF_VAR_subnetC: ${{ secrets.SUBNETC }}
+          TF_VAR_sgId: ${{ secrets.SGID }}
+          TF_VAR_accessConfig: ${{ secrets.ACCESSCONFIG }}
         run: terraform plan -no-color -input=false
         continue-on-error: true
 
@@ -85,10 +90,15 @@ jobs:
         env:
           TF_VAR_access_key: ${{ secrets.ACCESS_KEY }}
           TF_VAR_secret_key: ${{ secrets.SECRET_KEY }}
-          TF_VAR_ami_key_pair_name: ${{ secrets.AMI_KEY_PAIR_NAME }}
-          TF_VAR_vpc_id: ${{ secrets.VPC_ID }}
-          TF_VAR_list_subnet: ${{ secrets.LIST_SUBNET }}
-          TF_VAR_subnet_id: ${{ secrets.SUBNET_ID }}
+          TF_VAR_nodeName: ${{ secrets.NODENAME }}
+          TF_VAR_token: ${{ secrets.TOKEN }}
+          TF_VAR_labRole: ${{ secrets.LAB_ROLE }}
+          TF_VAR_principalArn: ${{ secrets.PRINCIPALARN }}
+          TF_VAR_subnetA: ${{ secrets.SUBNETA }}
+          TF_VAR_subnetB: ${{ secrets.SUBNETB }}
+          TF_VAR_subnetC: ${{ secrets.SUBNETC }}
+          TF_VAR_sgId: ${{ secrets.SGID }}
+          TF_VAR_accessConfig: ${{ secrets.ACCESSCONFIG }}
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
 
@@ -102,12 +112,6 @@ jobs:
           aws-access-key-id: ${{ secrets.ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.SECRET_KEY }}
           aws-region: us-east-1 
-      - name: Get EC2 instance ID by name
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        id: get-instance-id
-        run: |
-          instance_id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=kubectl" "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].InstanceId" --output text)
-          echo "::set-output name=instance_id::$instance_id"
   
       - name: Get EC2 instance host
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -116,12 +120,6 @@ jobs:
           instance_host=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=kubectl" "Name=instance-state-name,Values=running"  --query "Reservations[].Instances[].PublicIpAddress" --output text)
           echo "::set-output name=instance_info::$instance_host"
           
-      - name: Apply role to EC2 instance
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          instance_id="${{ steps.get-instance-id.outputs.instance_id }}"
-          aws ec2 associate-iam-instance-profile --iam-instance-profile Name=ed-eks-worker-new-profile --instance-id $instance_id
-      
       - name: Executing remote ssh commands using ssh key
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: appleboy/ssh-action@master
@@ -130,10 +128,14 @@ jobs:
           host: ${{ steps.ec2-info.outputs.instance_info }}
           username: "ec2-user"
           script: |
+            secret_key = ${{ secrets.SECRET_KEY }}
+            access_key = ${{ secrets.ACCESS_KEY }}
+            aws sts get-caller-identity
+            
             echo "AWS_SECRET_ACCESS_KEY: $SECRET_KEY"
             curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.29.0/2024-01-04/bin/linux/amd64/kubectl
             chmod +x ./kubectl
             mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
             echo 'export PATH=$HOME/bin:$PATH' >> ~/.bash_profile
             
-            aws eks update-kubeconfig --region us-east-1 --name restaurant-34
+            aws eks update-kubeconfig --region us-east-1 --name restaurant-34-cluster
