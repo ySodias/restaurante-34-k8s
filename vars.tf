@@ -1,16 +1,13 @@
 variable "access_key" {
   description = "Access key to AWS Console"
-  default     = ""
 }
 
 variable "secret_key" {
   description = "Secret key to AWS console"
-  default     = ""
 }
 
 variable "token" {
-  description = "Secret key to AWS console"
-  default     = ""
+  description = "Token key to AWS console"
 }
 
 variable "labRole" {
