@@ -12,7 +12,7 @@ resource "aws_eks_node_group" "node" {
 
   remote_access {
     ec2_ssh_key               = "teste"
-    source_security_group_ids = [var.sgId]
+    source_security_group_ids = ["${var.sgId}", "${aws_security_group.allow_ssh.id}", "${aws_security_group.allow_sonar.id}"]
   }
 
   update_config {
