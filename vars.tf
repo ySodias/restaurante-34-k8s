@@ -34,7 +34,7 @@ variable "sgId" {
   default = "sg-00d5ce21a29ae0348"
 }
 
-variable "vpcMain" {
+variable "vpc_main" {
   description = "Id of VPC"
 }
 
