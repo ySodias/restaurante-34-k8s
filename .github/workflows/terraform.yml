@@ -123,20 +123,20 @@ jobs:
           
       - name: Executing remote ssh commands using ssh key
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run:
+        run: |
           echo "AWS_PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}"
           echo "HOST: ${{ steps.ec2-info.outputs.instance_info }}"
-          ssh -i $AWS_PRIVATE_KEY  ec2-user@$HOST
-          secret_key = ${{ secrets.SECRET_KEY }}
-          access_key = ${{ secrets.ACCESS_KEY }}
-          aws sts get-caller-identity
-          
-          
-          curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.29.0/2024-01-04/bin/linux/amd64/kubectl
-          chmod +x ./kubectl
-          mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
-          echo 'export PATH=$HOME/bin:$PATH' >> ~/.bash_profile
-          
-          aws eks update-kubeconfig --region us-east-1 --name restaurant-34-cluster
+          ssh -i ${{ secrets.AWS_PRIVATE_KEY }} ec2-user@${{ steps.ec2-info.outputs.instance_info }} << 'EOF'
+            secret_key=${{ secrets.SECRET_KEY }}
+            access_key=${{ secrets.ACCESS_KEY }}
+            aws sts get-caller-identity
+            
+            curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.29.0/2024-01-04/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
+            echo 'export PATH=$HOME/bin:$PATH' >> ~/.bash_profile
+            
+            aws eks update-kubeconfig --region us-east-1 --name restaurant-34-cluster
+          EOF
 
 # instalar
