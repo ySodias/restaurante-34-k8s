@@ -49,6 +49,7 @@ jobs:
           TF_VAR_subnetC: ${{ secrets.SUBNETC }}
           TF_VAR_sgId: ${{ secrets.SGID }}
           TF_VAR_accessConfig: ${{ secrets.ACCESSCONFIG }}
+          TF_VAR_vpc_main: ${{ secrets.VPC_MAIN }}
         run: terraform plan -no-color -input=false
         continue-on-error: true
 
