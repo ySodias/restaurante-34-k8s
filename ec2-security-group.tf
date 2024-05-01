@@ -1,7 +1,7 @@
 resource "aws_security_group" "allow_ssh" {
   name        = "allow_ssh"
   description = "Allow ssh connection"
-  vpc_id      = var.vpc_main
+  vpc_id      = "vpc-01762e4150e03a675"
 
   tags = {
     Name = "allow_ssh"
@@ -19,7 +19,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ipv4" {
 resource "aws_security_group" "allow_sonar" {
   name        = "allow_sonar"
   description = "Allow Sonar connection"
-  vpc_id      = var.vpc_main
+  vpc_id      = "vpc-01762e4150e03a675"
 
   tags = {
     Name = "allow_ssh"
