@@ -34,10 +34,6 @@ variable "sgId" {
   default = "sg-00d5ce21a29ae0348"
 }
 
-variable "vpc_main" {
-  description = "Id of VPC"
-}
-
 variable "accessConfig" {
   default = "API_AND_CONFIG_MAP"
 }
