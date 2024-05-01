@@ -10,7 +10,7 @@ resource "aws_security_group" "allow_ssh" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ipv4" {
   security_group_id = aws_security_group.allow_ssh.id
-  cidr_ipv4         = aws_vpc.main.cidr_block
+  cidr_ipv4         = "172.31.0.0/16"
   from_port         = 22
   ip_protocol       = "ssh"
   to_port           = 0
@@ -19,7 +19,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ipv4" {
 resource "aws_security_group" "allow_sonar" {
   name        = "allow_sonar"
   description = "Allow Sonar connection"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpcMain
 
   tags = {
     Name = "allow_ssh"
@@ -28,7 +28,7 @@ resource "aws_security_group" "allow_sonar" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_sonar_ipv4" {
   security_group_id = aws_security_group.allow_ssh.id
-  cidr_ipv4         = var.vpcMain
+  cidr_ipv4         = "172.31.0.0/16"
   from_port         = 9000
   ip_protocol       = "tcp"
   to_port           = 9000
