@@ -46,7 +46,6 @@ resource "aws_security_group" "allow_sonar" {
   }
 
   tags = {
-    Name = "allow_ssh"
+    Name = "allow_sonar"
   }
 }
-

@@ -121,16 +121,25 @@ jobs:
         id: ec2-info
         run: |
           instance_host=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=kubectl" "Name=instance-state-name,Values=running"  --query "Reservations[].Instances[].PublicIpAddress" --output text)
+          instance_id=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=kubectl" "Name=instance-state-name,Values=running"  --query "Reservations[].Instances[].InstanceId" --output text)
           echo "::set-output name=instance_info::$instance_host"
-          
+          echo "::set-output name=instance_id::$instance_id"
+
+      - name: Allow Security Group SSH to ec2
+        run: |
+          security_group_id=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=allow_ssh" --query "SecurityGroups[0].GroupId" --output text)
+          aws ec2 modify-instance-attribute --instance-id ec2-user@${{ steps.ec2-info.outputs.instance_id }} --groups ec2-user@${{ steps.ec2-info.outputs.security_group_id }}
+              
       - name: Executing remote ssh commands using ssh key
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           echo "AWS_PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}"
           echo "HOST: ${{ steps.ec2-info.outputs.instance_info }}"
           ssh -i ${{ secrets.AWS_PRIVATE_KEY }} ec2-user@${{ steps.ec2-info.outputs.instance_info }} << 'EOF'
-            secret_key=${{ secrets.SECRET_KEY }}
-            access_key=${{ secrets.ACCESS_KEY }}
+            aws configure set AWS_SECRET_KEY ${{ secrets.SECRET_KEY }}
+            aws configure set AWS_ACESS_KEY_ID ${{ secrets.ACCESS_KEY }}
+            aws configure set AWS_SESSION_TOKEN ${{ secrets.TOKEN }}
+            
             aws sts get-caller-identity
             
             curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.29.0/2024-01-04/bin/linux/amd64/kubectl
@@ -139,6 +148,52 @@ jobs:
             echo 'export PATH=$HOME/bin:$PATH' >> ~/.bash_profile
             
             aws eks update-kubeconfig --region us-east-1 --name restaurant-34-cluster
+
+            kubectl apply <<EOF
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: sonarqube
+              spec:
+                replicas: 1
+                selector:
+                  matchLabels:
+                    app: sonarqube
+                template:
+                  metadata:
+                    labels:
+                      app: sonarqube
+                  spec:
+                    containers:
+                    - name: sonarqube
+                      image: sonarqube:latest
+                      ports:
+                      - containerPort: 9000
+                      volumeMounts:
+                      - name: sonarqube-data
+                        mountPath: /opt/sonarqube/data
+                      - name: sonarqube-extensions
+                        mountPath: /opt/sonarqube/extensions
+                    volumes:
+                    - name: sonarqube-data
+                      emptyDir: {}
+                    - name: sonarqube-extensions
+                      emptyDir: {}
+
+              ---
+              apiVersion: v1
+              kind: Service
+              metadata:
+                name: sonarqube-service
+              spec:
+                type: LoadBalancer
+                selector:
+                  app: sonarqube
+                ports:
+                  - protocol: TCP
+                    port: 9000
+                    targetPort: 9000
+            EOF
           EOF
 
 # instalar
